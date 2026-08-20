@@ -1,3 +1,6 @@
 fastapi
 uvicorn[standard]
-pydantic
+django
+psycopg[binary]
+asgiref
+python-dotenv
