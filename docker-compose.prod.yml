@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:16
+    env_file: .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  django_core:
+    build: ./django_core
+    env_file: .env
+    volumes:
+      - ./django_core:/app
+      # Изолируем папки пакетов, чтобы локальное окружение Windows не затирало библиотеки внутри Linux-контейнера:
+      - /app/.venv/
+      - /app/venv/
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+
+  api_service:
+    build: ./api_service
+    env_file: .env
+    volumes:
+      - ./api_service:/app
+      - ./django_core:/django_core
+    depends_on:
+      db:
+        condition: service_healthy
+      django_core:
+        condition: service_started
+    # Если внутри вашего api_service/app/main.py переменная FastAPI() называется по-другому (например, api = FastAPI()), измените app.main:app на app.main:api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+    ports:
+      - "8001:8001"
+
+  realtime_service:
+    build: ./realtime_service
+    env_file: .env
+    volumes:
+      - ./realtime_service:/app
+      - ./django_core:/django_core
+    depends_on:
+      db:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload
+    ports:
+      - "8002:8002"
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+volumes:
+  pg_data:
