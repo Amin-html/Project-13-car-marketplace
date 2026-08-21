@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+django
+psycopg[binary]
+asgiref
+python-dotenv
+pyjwt==2.10.1

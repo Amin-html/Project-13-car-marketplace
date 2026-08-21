@@ -2,3 +2,4 @@ fastapi
 uvicorn[standard]
 websockets
 redis
+pyjwt==2.10.1
