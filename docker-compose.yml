@@ -25,6 +25,8 @@ services:
       - "8000:8000"
 
   api_service:
+    environment:
+      - REDIS_URL=redis://redis:6379/0
     build: ./api_service
     env_file: .env
     volumes:

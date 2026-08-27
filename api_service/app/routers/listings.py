@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from asgiref.sync import sync_to_async
 from app.core.dependencies import get_current_user, require_role
 from app.schemas.listing import ListingCreate, ListingOut, ListingListResponse
+from app.core.cache import build_cache_key, get_cached, set_cached, invalidate_listings_cache
 
 router = APIRouter(prefix="/listings", tags=["listings"])
 
@@ -17,6 +18,16 @@ async def list_listings(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ):
+    cache_key = build_cache_key(
+        brand=brand, year_min=year_min, year_max=year_max,
+        price_min=price_min, price_max=price_max, mileage_max=mileage_max,
+        search=search, page=page, page_size=page_size,
+    )
+
+    cached = await get_cached(cache_key)
+    if cached is not None:
+        return ListingListResponse(**cached)
+
     from listings.models import Listing
     from django.db.models import Q
 
@@ -47,12 +58,13 @@ async def list_listings(
     qs = await sync_to_async(build_queryset)()
     total, items = await sync_to_async(paginate)(qs)
 
-    return ListingListResponse(
-        total=total,
-        page=page,
-        page_size=page_size,
+    response = ListingListResponse(
+        total=total, page=page, page_size=page_size,
         results=[ListingOut.model_validate(i) for i in items],
     )
+
+    await set_cached(cache_key, response.model_dump())
+    return response
 
 @router.post("/", response_model=ListingOut, status_code=201)
 async def create_listing(
@@ -65,6 +77,7 @@ async def create_listing(
         return Listing.objects.create(seller_id=current_user["user_id"], **data.model_dump())
 
     listing = await sync_to_async(create)()
+    await invalidate_listings_cache()
     return ListingOut.model_validate(listing)
 
 @router.get("/{listing_id}", response_model=ListingOut)
