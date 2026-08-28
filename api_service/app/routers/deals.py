@@ -3,6 +3,7 @@ from asgiref.sync import sync_to_async
 from app.core.dependencies import get_current_user, require_role
 from app.core.cache import invalidate_listings_cache
 from app.schemas.deal import DealCreate, DealStatusUpdate, DealOut
+from app.core.tasks import enqueue_deal_status_email
 
 router = APIRouter(prefix="/deals", tags=["deals"])
 
@@ -76,9 +77,12 @@ async def update_deal_status(
             deal.listing.save(update_fields=["status"])
         return deal
 
+    old_status = deal.status  # сохранить ДО apply_transition
+
     updated = await sync_to_async(apply_transition)()
     await invalidate_listings_cache()
 
     # TODO день 12: Celery-таск на email при смене статуса
+    enqueue_deal_status_email(deal_id=deal.id, old_status=old_status, new_status=data.status)
 
     return DealOut.model_validate(updated)

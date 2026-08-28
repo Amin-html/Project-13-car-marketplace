@@ -59,5 +59,17 @@ services:
     ports:
       - "6379:6379"
 
+  celery_worker:
+    build: ./django_core
+    env_file: .env
+    volumes:
+      - ./django_core:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: celery -A core worker -l info
+
 volumes:
   pg_data:

@@ -5,3 +5,4 @@ redis
 pyjwt==2.10.1
 redis[hiredis]
 django
+celery>=5.4.0
