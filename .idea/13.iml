@@ -4,6 +4,7 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/api_service" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/django_core" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/realtime_service" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/api_service/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/realtime_service/.venv" />
     </content>

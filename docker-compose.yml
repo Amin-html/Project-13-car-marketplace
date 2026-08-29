@@ -46,7 +46,6 @@ services:
     env_file: .env
     volumes:
       - ./realtime_service:/app
-      - ./django_core:/django_core
     depends_on:
       db:
         condition: service_healthy
