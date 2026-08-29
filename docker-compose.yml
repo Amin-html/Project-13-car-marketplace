@@ -46,6 +46,7 @@ services:
     env_file: .env
     volumes:
       - ./realtime_service:/app
+      - ./django_core:/django_core   # теперь тоже нужен доступ к моделям
     depends_on:
       db:
         condition: service_healthy
