@@ -1,9 +1,10 @@
 from fastapi import FastAPI
 from app.core import django_setup  # noqa: F401
-from app.ws import chat
+from app.ws import chat, auction
 
 app = FastAPI(title="Car Marketplace Realtime")
 app.include_router(chat.router)
+app.include_router(auction.router)
 
 @app.get("/health")
 async def health():
