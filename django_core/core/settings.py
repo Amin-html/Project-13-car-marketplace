@@ -141,3 +141,13 @@ CELERY_TASK_SERIALIZER = "json"
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"  # dev: печатает в консоль вместо реальной отправки
 DEFAULT_FROM_EMAIL = "noreply@car-marketplace.local"
+
+USE_S3 = os.environ.get("USE_S3", "False") == "True"
+
+if USE_S3:
+    AWS_ACCESS_KEY_ID = os.environ.get("MINIO_ACCESS_KEY")
+    AWS_SECRET_ACCESS_KEY = os.environ.get("MINIO_SECRET_KEY")
+    AWS_STORAGE_BUCKET_NAME = os.environ.get("MINIO_BUCKET", "car-marketplace")
+    AWS_S3_ENDPOINT_URL = os.environ.get("MINIO_ENDPOINT", "http://minio:9000")
+    AWS_S3_USE_SSL = False
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"

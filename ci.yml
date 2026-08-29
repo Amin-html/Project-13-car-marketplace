@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: car_marketplace_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+    env:
+      SECRET_KEY: ci-test-secret-key
+      DEBUG: "True"
+      POSTGRES_DB: car_marketplace_test
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_pass
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      REDIS_URL: redis://localhost:6379/0
+      JWT_ALGORITHM: HS256
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install django_core dependencies
+        run: pip install -r django_core/requirements.txt
+
+      - name: Install api_service dependencies
+        run: pip install -r api_service/requirements.txt
+
+      - name: Run Django migrations
+        working-directory: django_core
+        run: python manage.py migrate
+
+      - name: Run pytest
+        working-directory: api_service
+        env:
+          PYTHONPATH: /home/runner/work/car-marketplace/car-marketplace/django_core
+        run: pytest -v
